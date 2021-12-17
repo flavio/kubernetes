@@ -332,7 +332,6 @@ readonly KUBE_ALL_TARGETS=(
 readonly KUBE_ALL_BINARIES=("${KUBE_ALL_TARGETS[@]##*/}")
 
 readonly KUBE_STATIC_LIBRARIES=(
-  kube-apiserver
   kube-controller-manager
   kube-scheduler
   kube-proxy
