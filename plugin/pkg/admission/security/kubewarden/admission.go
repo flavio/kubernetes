@@ -108,11 +108,12 @@ func newPlugin(reader io.Reader) (*Plugin, error) {
 	if reader == nil {
 		// no reader specified - use default config
 	} else {
-		data, err := io.ReadAll(reader)
+		settings, err := newSettings(reader)
 		if err != nil {
-			return nil, err
+			fmt.Printf("Kubewarden - error processing config |%+v|\n", err)
+		} else {
+			fmt.Printf("Kubewarden - got config |%+v|\n", settings)
 		}
-		fmt.Printf("Kubewarden - got init code |%+v|\n", string(data))
 	}
 
 	code, err := ioutil.ReadFile("/hello.wasm")
@@ -272,7 +273,7 @@ func (p *Plugin) Validate(ctx context.Context, a admission.Attributes, o admissi
 			return fmt.Errorf("Cannot invoke Wasm policy: %w", err)
 		}
 
-		fmt.Printf("KUBEWARDEN: wams eval is |%s|\n", string(result))
+		fmt.Printf("KUBEWARDEN: wasm eval is |%s|\n", string(result))
 	}
 
 	return nil
