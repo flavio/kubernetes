@@ -9,9 +9,9 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-type Config struct {
-	PoliciesDownloadDir String            `json"policyDownloadDir"`
-	Policies            map[string]Policy `json:"policies"`
+type Settings struct {
+	PoliciesDownloadDir string                `json"policyDownloadDir"`
+	Policies            map[string]PolicySpec `json:"policies"`
 }
 
 type PolicyMode string
@@ -22,7 +22,7 @@ const (
 )
 
 // ClusterAdmissionPolicySpec defines the desired state of ClusterAdmissionPolicy
-type Policy struct {
+type PolicySpec struct {
 	// Module is the location of the WASM module to be loaded. Can be a
 	// local file (file://), a remote file served by an HTTP server
 	// (http://, https://), or an artifact served by an OCI-compatible
@@ -40,7 +40,7 @@ type Policy struct {
 	// +optional
 	Mode *PolicyMode `json:"mode,omitempty"`
 
-	// Settings is a free-form object that contains the policy configuration
+	// Settings is a free-form object that contains the policy settingsuration
 	Settings runtime.RawExtension `json:"settings,omitempty"`
 
 	// Rules describes what operations on what resources/subresources the webhook cares about.
@@ -135,7 +135,7 @@ type Policy struct {
 	ObjectSelector *metav1.LabelSelector `json:"objectSelector,omitempty"`
 }
 
-func (p *Policy) Defaults() {
+func (p *PolicySpec) Defaults() {
 	if p.Mode == nil {
 		protect := PolicyModeProtect
 		p.Mode = &protect
@@ -160,22 +160,22 @@ func (p *Policy) Defaults() {
 	}
 }
 
-func newConfig(reader io.Reader) (Config, error) {
+func newSettings(reader io.Reader) (Settings, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
-		return Config{}, err
+		return Settings{}, err
 	}
 
-	var config Config
-	err = yaml.Unmarshal(data, &config)
+	var settings Settings
+	err = yaml.Unmarshal(data, &settings)
 	if err != nil {
-		return Config{}, err
+		return Settings{}, err
 	}
 
-	for name, policy := range config.Policies {
+	for name, policy := range settings.Policies {
 		policy.Defaults()
-		config.Policies[name] = policy
+		settings.Policies[name] = policy
 	}
 
-	return config, nil
+	return settings, nil
 }
