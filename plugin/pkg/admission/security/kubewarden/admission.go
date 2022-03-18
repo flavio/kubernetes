@@ -120,6 +120,27 @@ func newPlugin(reader io.Reader) (*Plugin, error) {
 	return p, nil
 }
 
+// ValidateInitialization ensures an authorizer is set.
+func (p *Plugin) ValidateInitialization() error {
+	validationErrors := []error{}
+	ctx := context.Background()
+
+	for _, policy := range p.policies {
+		vsr, err := policy.ValidateSettings(ctx)
+		if err != nil {
+			validationErrors = append(validationErrors, err)
+		} else if !vsr.Valid {
+			validationErrors = append(validationErrors, fmt.Errorf("Settings for policy %s are not valid: %s", policy.Name, vsr.Message))
+		}
+	}
+
+	if len(validationErrors) > 0 {
+		klog.Errorf("KUBEWARDEN: %v", validationErrors)
+		return errors.New("KUBEWARDEN: policies configuration is wrong")
+	}
+	return nil
+}
+
 type relevantPolicy struct {
 	invocation *generic.WebhookInvocation
 	policy     *Policy
@@ -195,15 +216,11 @@ func (p *Plugin) Validate(ctx context.Context, a admission.Attributes, o admissi
 		}
 		klog.Infof("KUBEWARDEN: kubewarden JSON req: |%s|\n", string(kwValidationRequestJson))
 
-		result, err := policy.Validate(ctx, kwValidationRequestJson)
+		vr, err := policy.Validate(ctx, kwValidationRequestJson)
 		if err != nil {
 			err = errors.Wrapf(err, "Error evaluating Wasm policy %s", policy.Name)
 			return rejectAndLog(a, err)
 		} else {
-			vr, err := NewValidationResponse(result)
-			if err != nil {
-				klog.Errorf("KUBEWARDEN: cannot decode validation response: %v", err)
-			}
 			klog.Infof("KUBEWARDEN: policy eval results |%+v|", vr)
 			if !vr.Accepted {
 				err := fmt.Errorf("Kubewarden policy %s rejection: %s",

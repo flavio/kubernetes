@@ -16,3 +16,14 @@ func NewValidationResponse(data []byte) (ValidationResponse, error) {
 	err := json.Unmarshal(data, &vr)
 	return vr, err
 }
+
+type SettingsValidationResponse struct {
+	Valid   bool   `json:"valid"`
+	Message string `json:"message,omitempty"`
+}
+
+func NewSettingsValidationResponse(data []byte) (SettingsValidationResponse, error) {
+	svr := SettingsValidationResponse{}
+	err := json.Unmarshal(data, &svr)
+	return svr, err
+}

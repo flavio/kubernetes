@@ -2,14 +2,17 @@ package kubewarden
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	//"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/admission/plugin/webhook"
 
+	"github.com/pkg/errors"
 	"github.com/wapc/wapc-go"
 )
 
@@ -93,7 +96,26 @@ func validatingWebhookAccessor(name string, spec *PolicySpec) webhook.WebhookAcc
 		&webhookConfiguration.Webhooks[0])
 }
 
-func (p *Policy) Validate(ctx context.Context, req []byte) ([]byte, error) {
-	result, err := p.instance.Invoke(ctx, "validate", req)
-	return result, err
+func (p *Policy) Validate(ctx context.Context, req []byte) (ValidationResponse, error) {
+	data, err := p.instance.Invoke(ctx, "validate", req)
+	if err != nil {
+		err = errors.Wrapf(err, "Cannot decode validation response: %s", string(data))
+		return ValidationResponse{}, err
+	}
+	return NewValidationResponse(data)
+}
+
+func (p *Policy) ValidateSettings(ctx context.Context) (SettingsValidationResponse, error) {
+	settings, err := json.Marshal(p.Spec.Settings)
+	if err != nil {
+		err = errors.Wrapf(err, "Cannot convert policy %s settings to JSON", p.Name)
+		return SettingsValidationResponse{}, err
+	}
+
+	data, err := p.instance.Invoke(ctx, "validate_settings", settings)
+	if err != nil {
+		err = errors.Wrapf(err, "Cannot decode settings validation response: %s", string(data))
+		return SettingsValidationResponse{}, err
+	}
+	return NewSettingsValidationResponse(data)
 }
