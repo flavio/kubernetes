@@ -179,7 +179,6 @@ func (p *Plugin) Validate(ctx context.Context, a admission.Attributes, o admissi
 	}
 
 	for i := range relevantPolicies {
-		klog.Info("KUBEWARDEN: about to evaluate something")
 		relevantPolicy := relevantPolicies[i]
 		invocation := relevantPolicy.invocation
 		policy := relevantPolicy.policy
@@ -214,14 +213,12 @@ func (p *Plugin) Validate(ctx context.Context, a admission.Attributes, o admissi
 			err = errors.Wrap(err, "Cannot serialize kubewarden ValidationRequest")
 			return rejectAndLog(a, err)
 		}
-		klog.Infof("KUBEWARDEN: kubewarden JSON req: |%s|\n", string(kwValidationRequestJson))
 
 		vr, err := policy.Validate(ctx, kwValidationRequestJson)
 		if err != nil {
 			err = errors.Wrapf(err, "Error evaluating Wasm policy %s", policy.Name)
 			return rejectAndLog(a, err)
 		} else {
-			klog.Infof("KUBEWARDEN: policy eval results |%+v|", vr)
 			if !vr.Accepted {
 				err := fmt.Errorf("Kubewarden policy %s rejection: %s",
 					policy.Name,
