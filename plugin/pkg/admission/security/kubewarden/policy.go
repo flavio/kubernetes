@@ -102,7 +102,11 @@ func validatingWebhookAccessor(name string, spec *PolicySpec) webhook.WebhookAcc
 func (p *Policy) Validate(ctx context.Context, req []byte) (ValidationResponse, error) {
 	data, err := p.instance.Invoke(ctx, "validate", req)
 	if err != nil {
-		err = errors.Wrapf(err, "Cannot decode validation response: %s", string(data))
+		err = errors.Wrapf(
+			err,
+			"[policy %s] - cannot decode validation response: %s",
+			p.Name,
+			string(data))
 		return ValidationResponse{}, err
 	}
 	return NewValidationResponse(data)
@@ -111,13 +115,14 @@ func (p *Policy) Validate(ctx context.Context, req []byte) (ValidationResponse, 
 func (p *Policy) ValidateSettings(ctx context.Context) (SettingsValidationResponse, error) {
 	settings, err := json.Marshal(p.Spec.Settings)
 	if err != nil {
-		err = errors.Wrapf(err, "Cannot convert policy %s settings to JSON", p.Name)
+		err = errors.Wrapf(err, "[policy %s] - cannot convert settings to JSON", p.Name)
+
 		return SettingsValidationResponse{}, err
 	}
 
 	data, err := p.instance.Invoke(ctx, "validate_settings", settings)
 	if err != nil {
-		err = errors.Wrapf(err, "Cannot decode settings validation response: %s", string(data))
+		err = errors.Wrapf(err, "[policy %s] - settings validation failure: %s", p.Name)
 		return SettingsValidationResponse{}, err
 	}
 	return NewSettingsValidationResponse(data)
