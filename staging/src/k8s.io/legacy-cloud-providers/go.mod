@@ -6,9 +6,9 @@ go 1.16
 
 require (
 	cloud.google.com/go v0.81.0
-	github.com/Azure/azure-sdk-for-go v55.0.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.11.18
-	github.com/Azure/go-autorest/autorest/adal v0.9.13
+	github.com/Azure/azure-sdk-for-go v56.3.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.11.20
+	github.com/Azure/go-autorest/autorest/adal v0.9.15
 	github.com/Azure/go-autorest/autorest/mocks v0.4.1
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/Azure/go-autorest/autorest/validation v0.1.0 // indirect
@@ -18,14 +18,14 @@ require (
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/golang/mock v1.5.0
-	github.com/google/go-cmp v0.5.5
+	github.com/google/go-cmp v0.5.6
 	github.com/gophercloud/gophercloud v0.1.0
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/rubiojr/go-vhd v0.0.0-20200706105327-02e210299021
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/vmware/govmomi v0.20.3
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	google.golang.org/api v0.46.0
 	gopkg.in/gcfg.v1 v1.2.0
@@ -44,6 +44,15 @@ require (
 )
 
 replace (
+	github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v55.0.0+incompatible
+	github.com/Azure/go-autorest/autorest => github.com/Azure/go-autorest/autorest v0.11.18
+	github.com/Azure/go-autorest/autorest/adal => github.com/Azure/go-autorest/autorest/adal v0.9.13
+	github.com/google/go-cmp => github.com/google/go-cmp v0.5.5
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/net => golang.org/x/net v0.0.0-20211209124913-491a49abca63
+	golang.org/x/sys => golang.org/x/sys v0.0.0-20210831042530-f4d43177bf5e
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2
+	google.golang.org/grpc => google.golang.org/grpc v1.40.0
 	k8s.io/api => ../api
 	k8s.io/apimachinery => ../apimachinery
 	k8s.io/apiserver => ../apiserver

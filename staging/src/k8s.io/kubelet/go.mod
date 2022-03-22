@@ -6,14 +6,22 @@ go 1.16
 
 require (
 	github.com/gogo/protobuf v1.3.2
-	golang.org/x/net v0.0.0-20211209124913-491a49abca63
-	google.golang.org/grpc v1.40.0
+	golang.org/x/net v0.0.0-20220107192237-5cfca573fb4d
+	google.golang.org/grpc v1.43.0
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/component-base v0.0.0
 )
 
 replace (
+	github.com/Azure/go-autorest/autorest => github.com/Azure/go-autorest/autorest v0.11.18
+	github.com/Azure/go-autorest/autorest/adal => github.com/Azure/go-autorest/autorest/adal v0.9.13
+	github.com/google/go-cmp => github.com/google/go-cmp v0.5.5
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/net => golang.org/x/net v0.0.0-20211209124913-491a49abca63
+	golang.org/x/sys => golang.org/x/sys v0.0.0-20210831042530-f4d43177bf5e
+	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2
+	google.golang.org/grpc => google.golang.org/grpc v1.40.0
 	k8s.io/api => ../api
 	k8s.io/apimachinery => ../apimachinery
 	k8s.io/client-go => ../client-go
