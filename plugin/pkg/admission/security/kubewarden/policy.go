@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/wapc/wapc-go"
+	"github.com/wapc/wapc-go/engines/wazero"
 )
 
 func wapcHostCall(ctx context.Context, binding, namespace, operation string, payload []byte) ([]byte, error) {
@@ -34,8 +35,8 @@ type Policy struct {
 	Spec *PolicySpec
 	Hook webhook.WebhookAccessor
 
-	module   *wapc.Module
-	instance *wapc.Instance
+	module   wapc.Module
+	instance wapc.Instance
 }
 
 func NewPolicy(ctx context.Context, name string, spec *PolicySpec, downloadDir string) (*Policy, error) {
@@ -48,7 +49,9 @@ func NewPolicy(ctx context.Context, name string, spec *PolicySpec, downloadDir s
 	if err != nil {
 		return nil, err
 	}
-	module, err := wapc.New(wasmData, wapcHostCall)
+
+	engine := wazero.Engine()
+	module, err := engine.New(wasmData, wapcHostCall)
 	if err != nil {
 		return nil, err
 	}
