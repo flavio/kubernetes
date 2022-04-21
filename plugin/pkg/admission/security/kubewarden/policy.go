@@ -2,12 +2,12 @@ package kubewarden
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 
 	//"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/admission/plugin/webhook"
@@ -113,16 +113,15 @@ func (p *Policy) Validate(ctx context.Context, req []byte) (ValidationResponse, 
 }
 
 func (p *Policy) ValidateSettings(ctx context.Context) (SettingsValidationResponse, error) {
-	settings, err := json.Marshal(p.Spec.Settings)
-	if err != nil {
-		err = errors.Wrapf(err, "[policy %s] - cannot convert settings to JSON", p.Name)
-
-		return SettingsValidationResponse{}, err
+	settings := []byte("{}")
+	if len(p.Spec.Settings.Raw) > 0 {
+		settings = p.Spec.Settings.Raw
 	}
+	klog.Infof("[policy %s] - settings: %s", p.Name, string(settings))
 
 	data, err := p.instance.Invoke(ctx, "validate_settings", settings)
 	if err != nil {
-		err = errors.Wrapf(err, "[policy %s] - settings validation failure: %s", p.Name)
+		err = errors.Wrapf(err, "[policy %s] - settings validation failure", p.Name)
 		return SettingsValidationResponse{}, err
 	}
 	return NewSettingsValidationResponse(data)
