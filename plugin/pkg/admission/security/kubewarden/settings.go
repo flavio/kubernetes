@@ -10,7 +10,7 @@ import (
 )
 
 type Settings struct {
-	PoliciesDownloadDir string                `json"policyDownloadDir"`
+	PoliciesDownloadDir string                `json:"policiesDownloadDir"`
 	Policies            map[string]PolicySpec `json:"policies"`
 }
 
