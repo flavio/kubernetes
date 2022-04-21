@@ -29,7 +29,9 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/admission"
@@ -38,6 +40,10 @@ import (
 	"k8s.io/apiserver/pkg/admission/plugin/webhook/generic"
 	webhookrequest "k8s.io/apiserver/pkg/admission/plugin/webhook/request"
 	webhookutil "k8s.io/apiserver/pkg/util/webhook"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	covev1client "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 
 	"github.com/pkg/errors"
@@ -58,6 +64,19 @@ type Plugin struct {
 	*generic.Webhook
 
 	policies []*Policy
+	client   kubernetes.Interface
+	recorder record.EventRecorder
+}
+
+// SetExternalKubeClientSet sets the client for the plugin
+func (p *Plugin) SetExternalKubeClientSet(cl kubernetes.Interface) {
+	p.client = cl
+
+	// configure the event recorder, this requires the client that has just been given
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartStructuredLogging(0)
+	eventBroadcaster.StartRecordingToSink(&covev1client.EventSinkImpl{Interface: p.client.CoreV1().Events("")})
+	p.recorder = eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: "kubewarden-embedded"})
 }
 
 var _ admission.ValidationInterface = &Plugin{}
@@ -117,6 +136,7 @@ func newPlugin(reader io.Reader) (*Plugin, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return p, nil
 }
 
@@ -124,6 +144,10 @@ func newPlugin(reader io.Reader) (*Plugin, error) {
 func (p *Plugin) ValidateInitialization() error {
 	validationErrors := []error{}
 	ctx := context.Background()
+
+	if p.client == nil {
+		return fmt.Errorf("missing client")
+	}
 
 	for _, policy := range p.policies {
 		vsr, err := policy.ValidateSettings(ctx)
@@ -191,15 +215,23 @@ func (p *Plugin) Validate(ctx context.Context, a admission.Attributes, o admissi
 		}
 
 		var kwValidationRequestJson []byte
+		var objKind string
+		var objApiVersion string
 
 		switch t := request.(type) {
 		case *admissionv1.AdmissionReview:
+			objKind = t.Request.Kind.Kind
+			objApiVersion = fmt.Sprintf("%s/%s", t.Request.Kind.Group, t.Request.Kind.Version)
+
 			kwValidationRequest := kubewardenValidationRequestV1{
 				Request:  t.Request,
 				Settings: policy.Spec.Settings,
 			}
 			kwValidationRequestJson, err = json.Marshal(kwValidationRequest)
 		case *admissionv1beta1.AdmissionReview:
+			objKind = t.Request.Kind.Kind
+			objApiVersion = fmt.Sprintf("%s/%s", t.Request.Kind.Group, t.Request.Kind.Version)
+
 			kwValidationRequest := kubewardenValidationRequestV1beta1{
 				Request:  t.Request,
 				Settings: policy.Spec.Settings,
@@ -223,6 +255,15 @@ func (p *Plugin) Validate(ctx context.Context, a admission.Attributes, o admissi
 				err := fmt.Errorf("Kubewarden policy %s rejection: %s",
 					policy.Name,
 					vr.Message)
+
+				reportObj := map[string]interface{}{
+					"apiVersion": objApiVersion,
+					"kind":       objKind,
+				}
+
+				u := &unstructured.Unstructured{Object: reportObj}
+				p.recorder.Eventf(u, corev1.EventTypeWarning, "ValidationRejection", "%s: %s", policy.Name, vr.Message)
+
 				return rejectAndLog(a, err)
 			}
 		}
